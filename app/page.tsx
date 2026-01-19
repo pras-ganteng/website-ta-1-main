@@ -6,6 +6,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { login } from '@/lib/api/auth';
 import { LoginRequest } from '@/lib/types/auth';
+import { setSession } from '@/lib/auth/session';
 
 export default function Home() {
   const router = useRouter();
@@ -18,9 +19,13 @@ export default function Home() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await login(formData);
-    localStorage.setItem('user', JSON.stringify(res.data));
-    router.push('/siswa');
+    try {
+      const res = await login(formData);
+      setSession(res.data);
+      router.push('/siswa');
+    } catch (error) {
+      alert('Login gagal. Periksa kembali NIS dan password Anda.');
+    }
   };
 
   return (

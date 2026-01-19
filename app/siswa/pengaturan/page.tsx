@@ -1,15 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Pencil, ChevronDown, ArrowLeft, X } from 'lucide-react';
+import { getSession, clearSession } from '@/lib/auth/session';
 
 export default function PengaturanAkunPage() {
   const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [newEmail, setNewEmail] = useState('');
-
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
   const [formData, setFormData] = useState({
     nis: '7803/1148.063',
     nama: 'Ravel',
@@ -17,6 +19,34 @@ export default function PengaturanAkunPage() {
     kelas: '11 RPL 2',
     email: 'jurusann@gamil.com'
   });
+
+  useEffect(() => {
+    const session = getSession();
+    if (!session) {
+      router.replace('/');
+    } else {
+      setUser(session);
+    }
+    setIsLoading(false);
+  }, [router]);
+
+  const handleLogout = () => {
+    clearSession();
+    router.push('/');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-100 to-blue-50">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Memuat...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 to-blue-50">
@@ -49,7 +79,12 @@ export default function PengaturanAkunPage() {
                 {dropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-xl z-10">
                     <a href="/siswa/pengaturan" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profil</a>
-                    <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Keluar</a>
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium"
+                    >
+                      Keluar
+                    </button>
                   </div>
                 )}
               </div>
