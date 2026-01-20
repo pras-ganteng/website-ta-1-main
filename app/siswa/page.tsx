@@ -35,21 +35,29 @@ const StatCard = ({ title, value, color, icon }: StatCardProps) => (
   </div>
 );
 
-const PrayerTimeCard = ({ prayer, time, status, statusColor }: PrayerTimeCardProps) => (
-  <div className={`border rounded-lg p-4 flex justify-between items-center mb-3 border-l-4 ${statusColor}`}>
-    <div>
-      <p className="font-bold text-black">{prayer}</p>
-      <p className="text-sm text-black">{time}</p>
+const PrayerTimeCard = ({ prayer, time, status, statusColor }: PrayerTimeCardProps) => {
+  const getClasses = (status: string) => {
+    switch (status) {
+      case 'Selesai':
+        return 'border-2 border-green-300 bg-green-50';
+      case 'Berlangsung':
+        return 'border-2 border-orange-300 bg-orange-50';
+      default:
+        return 'border-2 border-blue-300 bg-blue-50';
+    }
+  };
+  return (
+    <div className={`rounded-lg p-4 flex justify-between items-center mb-3 ${getClasses(status)} shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer`}>
+      <div>
+        <p className="font-bold text-black">{prayer}</p>
+        <p className="text-sm text-black">{time}</p>
+      </div>
+      <span className={`text-xs font-semibold px-3 py-1 rounded-full ${status === 'Selesai' ? 'bg-green-100 text-green-700' : status === 'Berlangsung' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
+        {status}
+      </span>
     </div>
-    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
-        status === 'Selesai' ? 'bg-green-100 text-green-700' : 
-        status === 'Berlangsung' ? 'bg-orange-100 text-orange-700' : 
-        'bg-blue-100 text-blue-700'
-    }`}>
-      {status}
-    </span>
-  </div>
-);
+  );
+};
 
 const HistoryRow = ({ date, prayer, time, status }: HistoryRowProps) => (
   <tr className="border-b">
@@ -82,6 +90,90 @@ export default function SiswaPage() {
     clearSession();
     router.push('/');
   };
+
+  // Helpers to parse time strings like "07.00" or "07:00" into today's Date
+  const parseTimeToDate = (timeStr: string) => {
+    const cleaned = timeStr.replace(/\./g, ':').trim();
+    const [h, m] = cleaned.split(':').map((s) => parseInt(s, 10));
+    const d = new Date();
+    d.setHours(Number.isFinite(h) ? h : 0, Number.isFinite(m) ? m : 0, 0, 0);
+    return d;
+  };
+
+  const getStatusForRange = (start: Date, end: Date) => {
+    const now = new Date();
+    if (now < start) return 'Akan Datang';
+    if (now >= start && now <= end) return 'Berlangsung';
+    return 'Selesai';
+  };
+
+  // Prayer schedule for today. Times are local. Update these values if needed.
+  const isFriday = new Date().getDay() === 5; // Friday -> 5 (Sun=0)
+
+  // base schedule
+  const basePrayers = [
+    { prayer: 'Dhuha', start: '07:00', end: '08:00' },
+    { prayer: 'Dhuhur', start: '12:00', end: '13:00' },
+    { prayer: 'Ashar', start: '15:00', end: '16:00' },
+  ];
+
+  const prayers: Array<any> = [];
+
+  basePrayers.forEach((p) => {
+    if (p.prayer === 'Ashar' && isFriday) {
+      // On Friday: show Jumat in place of Ashar, then add a later Ashar for women
+      const startDate = parseTimeToDate(p.start);
+      const endDate = parseTimeToDate(p.end);
+      const jumatStatus = getStatusForRange(startDate, endDate);
+      const jumatPriority = jumatStatus === 'Akan Datang' ? 0 : jumatStatus === 'Berlangsung' ? 1 : 2;
+      prayers.push({
+        prayer: 'Jumat',
+        start: p.start,
+        end: p.end,
+        startDate,
+        endDate,
+        status: jumatStatus,
+        priority: jumatPriority,
+        displayTime: `${p.start.replace(':', '.')} - ${p.end.replace(':', '.')} WIB`,
+      });
+
+      // create Ashar for women later: start 30 minutes after Jumat end, same duration
+      const duration = endDate.getTime() - startDate.getTime();
+      const asharlaterStart = new Date(endDate.getTime() + 30 * 60000);
+      const asharlaterEnd = new Date(asharlaterStart.getTime() + duration);
+      const asharlaterStatus = getStatusForRange(asharlaterStart, asharlaterEnd);
+      const asharlaterPriority = asharlaterStatus === 'Akan Datang' ? 0 : asharlaterStatus === 'Berlangsung' ? 1 : 2;
+      prayers.push({
+        prayer: 'Ashar (Wanita)',
+        start: asharlaterStart.toTimeString().slice(0,5),
+        end: asharlaterEnd.toTimeString().slice(0,5),
+        startDate: asharlaterStart,
+        endDate: asharlaterEnd,
+        status: asharlaterStatus,
+        priority: asharlaterPriority,
+        displayTime: `${asharlaterStart.getHours().toString().padStart(2,'0')}.${asharlaterStart.getMinutes().toString().padStart(2,'0')} - ${asharlaterEnd.getHours().toString().padStart(2,'0')}.${asharlaterEnd.getMinutes().toString().padStart(2,'0')} WIB`,
+      });
+    } else {
+      const startDate = parseTimeToDate(p.start);
+      const endDate = parseTimeToDate(p.end);
+      const status = getStatusForRange(startDate, endDate);
+      const priority = status === 'Akan Datang' ? 0 : status === 'Berlangsung' ? 1 : 2;
+      prayers.push({
+        ...p,
+        startDate,
+        endDate,
+        status,
+        priority,
+        displayTime: `${p.start.replace(':', '.')} - ${p.end.replace(':', '.')} WIB`,
+      });
+    }
+  });
+
+  // Sort: upcoming first, ongoing middle, done bottom. Within each group sort by start time ascending.
+  const sortedPrayers = prayers.sort((a, b) => {
+    if (a.priority !== b.priority) return a.priority - b.priority;
+    return a.startDate.getTime() - b.startDate.getTime();
+  });
 
   if (isLoading) {
     return (
@@ -149,7 +241,7 @@ export default function SiswaPage() {
           </div>
           <button 
             onClick={() => router.push('/siswa/scan')}
-            className="bg-white text-red-500 font-bold py-2 px-6 rounded-lg shadow"
+            className="bg-white text-red-500 font-bold py-2 px-6 rounded-lg shadow hover:shadow-lg hover:bg-red-500 hover:text-white transition-all duration-200 cursor-pointer"
           >
             Absen Sekarang
           </button>
@@ -165,9 +257,18 @@ export default function SiswaPage() {
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h3 className="font-bold text-xl mb-4 text-black">Jadwal Sholat hari ini</h3>
             <div>
-              <PrayerTimeCard prayer="Dhuha" time="07.00 - 08.00 WIB" status="Selesai" statusColor="border-l-green-500" />
-              <PrayerTimeCard prayer="Dhuhur" time="12.00 - 13.00 WIB" status="Berlangsung" statusColor="border-l-orange-500" />
-              <PrayerTimeCard prayer="Ashar" time="15.00 - 16.00 WIB" status="Akan Datang" statusColor="border-l-blue-500" />
+              {sortedPrayers.map((p) => {
+                const statusColor = p.status === 'Selesai' ? 'border-l-green-500' : p.status === 'Berlangsung' ? 'border-l-orange-500' : 'border-l-blue-500';
+                return (
+                  <PrayerTimeCard
+                    key={p.prayer}
+                    prayer={p.prayer}
+                    time={p.displayTime}
+                    status={p.status}
+                    statusColor={statusColor}
+                  />
+                );
+              })}
             </div>
           </div>
 

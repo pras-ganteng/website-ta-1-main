@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import { login } from '@/lib/api/auth';
 import { LoginRequest } from '@/lib/types/auth';
 import { setSession } from '@/lib/auth/session';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import CustomDialog from '@/components/CustomDialog';
 
 export default function Home() {
   const router = useRouter();
@@ -16,15 +18,20 @@ export default function Home() {
     password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [dialog, setDialog] = useState<{open: boolean, title: string, message: string}>({open: false, title: '', message: ''});
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       const res = await login(formData);
       setSession(res.data);
       router.push('/siswa');
     } catch (error) {
-      alert('Login gagal. Periksa kembali NIS dan password Anda.');
+      setDialog({open: true, title: 'Login Gagal', message: 'Periksa kembali NIS dan password Anda.'});
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -126,9 +133,10 @@ export default function Home() {
                   placeholder="Masukkan NIS / NIP"
                   className="w-full h-[56px] rounded-xl px-4 text-black font-bold"
                   style={{ background: 'rgba(255,255,255,0.5)' }}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nis: e.target.value })
-                  }
+                    onChange={(e) =>
+                      setFormData({ ...formData, nis: e.target.value })
+                    }
+                    disabled={isLoading}
                 />
               </div>
 
@@ -145,11 +153,13 @@ export default function Home() {
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
                     }
+                    disabled={isLoading}
                   />
                   <button
                     type="button"
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-black"
                     onClick={() => setShowPassword(!showPassword)}
+                    disabled={isLoading}
                   >
                     {showPassword ? <Eye /> : <EyeOff />}
                   </button>
@@ -162,9 +172,17 @@ export default function Home() {
 
               <button
                 type="submit"
-                className="w-full h-[56px] md:h-[70px] bg-white text-black rounded-full font-extrabold text-lg shadow-lg"
+                className="w-full h-[56px] md:h-[70px] bg-white text-black rounded-full font-extrabold text-lg shadow-lg flex items-center justify-center gap-3"
+                disabled={isLoading}
               >
-                Masuk
+                {isLoading ? (
+                  <>
+                    <LoadingSpinner size={18} stroke="#000" />
+                    <span>Memproses...</span>
+                  </>
+                ) : (
+                  'Masuk'
+                )}
               </button>
             </form>
 
@@ -177,6 +195,12 @@ export default function Home() {
           </div>
         </div>
       </main>
+      <CustomDialog
+        isOpen={dialog.open}
+        title={dialog.title}
+        message={dialog.message}
+        onClose={() => setDialog({open: false, title: '', message: ''})}
+      />
     </div>
   );
 }

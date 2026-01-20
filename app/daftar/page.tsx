@@ -5,6 +5,8 @@ import { Eye, EyeOff } from 'lucide-react';
 import { register } from '@/lib/api/auth';
 import { RegisterRequest } from '@/lib/types/auth';
 import Image from 'next/image';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import CustomDialog from '@/components/CustomDialog';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState<RegisterRequest>({
@@ -17,6 +19,7 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [dialog, setDialog] = useState<{open: boolean, title: string, message: string}>({open: false, title: '', message: ''});
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,28 +28,28 @@ export default function RegisterPage() {
 
     try {
       if (!formData.nis.trim() || !formData.email.trim() || !formData.password.trim() || !confirmPassword.trim()) {
-        setMessage('Semua field wajib diisi.');
+        setDialog({open: true, title: 'Error', message: 'Semua field wajib diisi.'});
         setIsLoading(false);
         return;
       }
 
       if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-        setMessage('Email tidak valid.');
+        setDialog({open: true, title: 'Error', message: 'Email tidak valid.'});
         setIsLoading(false);
         return;
       }
 
       if (formData.password !== confirmPassword) {
-        setMessage('Kata sandi dan konfirmasi tidak cocok.');
+        setDialog({open: true, title: 'Error', message: 'Kata sandi dan konfirmasi tidak cocok.'});
         setIsLoading(false);
         return;
       }
 
       await register(formData);
-      setMessage('Registrasi berhasil! Silakan login.');
+      setDialog({open: true, title: 'Berhasil', message: 'Registrasi berhasil! Silakan login.'});
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Registrasi gagal. Silakan coba lagi.';
-      setMessage(`Registrasi gagal: ${errorMessage}`);
+      setDialog({open: true, title: 'Error', message: `Registrasi gagal: ${errorMessage}`});
     } finally {
       setIsLoading(false);
     }
@@ -204,9 +207,16 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-[56px] md:h-[70px] bg-white text-black rounded-full font-extrabold text-lg shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="w-full h-[56px] md:h-[70px] bg-white text-black rounded-full font-extrabold text-lg shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-3"
               >
-                {isLoading ? 'Memproses...' : 'Daftar'}
+                {isLoading ? (
+                  <>
+                    <LoadingSpinner size={18} stroke="#000" />
+                    <span>Memproses...</span>
+                  </>
+                ) : (
+                  'Daftar'
+                )}
               </button>
             </form>
 
@@ -244,18 +254,12 @@ export default function RegisterPage() {
         </div>
       </main>
 
-      {/* TOAST MESSAGE (fixed bottom) */}
-      {message && (
-        <div
-          className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg max-w-md text-center z-50 ${
-            message.includes('berhasil')
-              ? 'bg-green-100 text-green-800 border border-green-200'
-              : 'bg-red-100 text-red-800 border border-red-200'
-          }`}
-        >
-          {message}
-        </div>
-      )}
+      <CustomDialog
+        isOpen={dialog.open}
+        title={dialog.title}
+        message={dialog.message}
+        onClose={() => setDialog({open: false, title: '', message: ''})}
+      />
     </div>
   );
 }

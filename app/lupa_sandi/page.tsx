@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { useRouter } from 'next/navigation';
+import CustomDialog from '@/components/CustomDialog';
 
 export default function ForgotPassword() {
   const router = useRouter();
@@ -11,6 +13,7 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [dialog, setDialog] = useState<{open: boolean, title: string, message: string}>({open: false, title: '', message: ''});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,19 +21,19 @@ export default function ForgotPassword() {
     setIsLoading(true);
 
     if (!nis.trim()) {
-      setMessage('NIS/NIP wajib diisi');
+      setDialog({open: true, title: 'Error', message: 'NIS/NIP wajib diisi'});
       setIsLoading(false);
       return;
     }
 
     if (!email.trim()) {
-      setMessage('Email wajib diisi');
+      setDialog({open: true, title: 'Error', message: 'Email wajib diisi'});
       setIsLoading(false);
       return;
     }
 
     setTimeout(() => {
-      setMessage('Link reset kata sandi telah dikirim ke email.');
+      setDialog({open: true, title: 'Berhasil', message: 'Link reset kata sandi telah dikirim ke email.'});
       setIsLoading(false);
     }, 1500);
   };
@@ -130,25 +133,27 @@ export default function ForgotPassword() {
             <button
               type="submit"
               disabled={isLoading}
-              className="mx-auto block w-[260px] h-[60px] bg-white text-black rounded-full font-extrabold text-lg shadow-lg disabled:opacity-60"
+              className="mx-auto block w-[260px] h-[60px] bg-white text-black rounded-full font-extrabold text-lg shadow-lg disabled:opacity-60 flex items-center justify-center gap-3"
             >
-              {isLoading ? 'Memproses...' : 'Lanjut'}
+              {isLoading ? (
+                <>
+                  <LoadingSpinner size={18} stroke="#000" />
+                  <span>Memproses...</span>
+                </>
+              ) : (
+                'Lanjut'
+              )}
             </button>
           </form>
         </div>
       </main>
 
-      {/* MESSAGE */}
-      {message && (
-        <div
-          className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg ${message.includes('dikirim')
-              ? 'bg-green-100 text-green-800'
-              : 'bg-red-100 text-red-800'
-            }`}
-        >
-          {message}
-        </div>
-      )}
+      <CustomDialog
+        isOpen={dialog.open}
+        title={dialog.title}
+        message={dialog.message}
+        onClose={() => setDialog({open: false, title: '', message: ''})}
+      />
     </div>
   );
 }
