@@ -6,19 +6,25 @@ export interface RegisterRequest {
 }
 
 export interface LoginRequest {
-  nis: string;
+  identifier: string;
   password: string;
 }
 
 // Response types
 export interface LoginResponse {
-  nis: string;
-  nama_siswa: string;
-  jk: string;
-  jurusan: string;
-  kelas: string;
+  nis?: string;
+  nama_siswa?: string;
+  jk?: string;
+  jurusan?: string;
+  kelas?: string;
   email: string;
   is_google_acct: boolean;
+  role?: string;
+  token?: string;
+  id_staff?: number;
+  nip?: string;
+  name?: string;
+  username?: string;
 }
 
 export interface RegisterResponse {
@@ -36,5 +42,5 @@ export interface LoginResponseData {
 
 export interface ErrorResponse {
   message: string;
-  error?: any;
+  error?: string;
 }

@@ -14,12 +14,12 @@ export default function Home() {
   const router = useRouter();
 
   const [formData, setFormData] = useState<LoginRequest>({
-    nis: '',
+    identifier: '',
     password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [dialog, setDialog] = useState<{open: boolean, title: string, message: string}>({open: false, title: '', message: ''});
+  const [dialog, setDialog] = useState<{ open: boolean, title: string, message: string }>({ open: false, title: '', message: '' });
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,9 +27,15 @@ export default function Home() {
     try {
       const res = await login(formData);
       setSession(res.data);
-      router.push('/siswa');
-    } catch (error) {
-      setDialog({open: true, title: 'Login Gagal', message: 'Periksa kembali NIS dan password Anda.'});
+      
+      // Redirect based on user role
+      if (res.data.role && (res.data.role.toLowerCase() === 'admin' || res.data.role.toLowerCase() === 'guru' || res.data.role.toLowerCase() === 'wali_kelas')) {
+        router.push('/admin');
+      } else {
+        router.push('/siswa');
+      }
+    } catch {
+      setDialog({ open: true, title: 'Login Gagal', message: 'Periksa kembali NIS dan password Anda.' });
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +118,7 @@ export default function Home() {
             </p>
           </div>
 
-            <div
+          <div
             className="rounded-xl p-6 md:p-10 shadow-xl text-white"
             style={{
               background:
@@ -133,10 +139,10 @@ export default function Home() {
                   placeholder="Masukkan NIS / NIP"
                   className="w-full h-[56px] rounded-xl px-4 text-black font-bold"
                   style={{ background: 'rgba(255,255,255,0.5)' }}
-                    onChange={(e) =>
-                      setFormData({ ...formData, nis: e.target.value })
-                    }
-                    disabled={isLoading}
+                  onChange={(e) =>
+                    setFormData({ ...formData, identifier: e.target.value })
+                  }
+                  disabled={isLoading}
                 />
               </div>
 
@@ -199,7 +205,7 @@ export default function Home() {
         isOpen={dialog.open}
         title={dialog.title}
         message={dialog.message}
-        onClose={() => setDialog({open: false, title: '', message: ''})}
+        onClose={() => setDialog({ open: false, title: '', message: '' })}
       />
     </div>
   );

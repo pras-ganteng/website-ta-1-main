@@ -5,6 +5,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { register } from '@/lib/api/auth';
 import { RegisterRequest } from '@/lib/types/auth';
 import Image from 'next/image';
+import Link from 'next/link';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import CustomDialog from '@/components/CustomDialog';
 
@@ -17,39 +18,37 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [dialog, setDialog] = useState<{open: boolean, title: string, message: string}>({open: false, title: '', message: ''});
+  const [dialog, setDialog] = useState<{ open: boolean, title: string, message: string }>({ open: false, title: '', message: '' });
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage('');
     setIsLoading(true);
 
     try {
       if (!formData.nis.trim() || !formData.email.trim() || !formData.password.trim() || !confirmPassword.trim()) {
-        setDialog({open: true, title: 'Error', message: 'Semua field wajib diisi.'});
+        setDialog({ open: true, title: 'Error', message: 'Semua field wajib diisi.' });
         setIsLoading(false);
         return;
       }
 
       if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-        setDialog({open: true, title: 'Error', message: 'Email tidak valid.'});
+        setDialog({ open: true, title: 'Error', message: 'Email tidak valid.' });
         setIsLoading(false);
         return;
       }
 
       if (formData.password !== confirmPassword) {
-        setDialog({open: true, title: 'Error', message: 'Kata sandi dan konfirmasi tidak cocok.'});
+        setDialog({ open: true, title: 'Error', message: 'Kata sandi dan konfirmasi tidak cocok.' });
         setIsLoading(false);
         return;
       }
 
       await register(formData);
-      setDialog({open: true, title: 'Berhasil', message: 'Registrasi berhasil! Silakan login.'});
+      setDialog({ open: true, title: 'Berhasil', message: 'Registrasi berhasil! Silakan login.' });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Registrasi gagal. Silakan coba lagi.';
-      setDialog({open: true, title: 'Error', message: `Registrasi gagal: ${errorMessage}`});
+      setDialog({ open: true, title: 'Error', message: `Registrasi gagal: ${errorMessage}` });
     } finally {
       setIsLoading(false);
     }
@@ -107,8 +106,8 @@ export default function RegisterPage() {
           width={200}
           height={480}
           className="hidden lg:block absolute right-6 bottom-10 z-10"
-          />
-  
+        />
+
         <div className="max-w-6xl mx-auto grid gap-8 md:grid-cols-2">
 
           {/* KIRI — FORM DAFTAR (GRADIEN ORANGE) */}
@@ -222,9 +221,9 @@ export default function RegisterPage() {
 
             <p className="text-center text-xs md:text-sm mt-4">
               Sudah punya akun?{' '}
-              <a href="/" className="underline">
+              <Link href="/" className="underline">
                 Login
-              </a>
+              </Link>
             </p>
           </div>
 
@@ -258,7 +257,7 @@ export default function RegisterPage() {
         isOpen={dialog.open}
         title={dialog.title}
         message={dialog.message}
-        onClose={() => setDialog({open: false, title: '', message: ''})}
+        onClose={() => setDialog({ open: false, title: '', message: '' })}
       />
     </div>
   );

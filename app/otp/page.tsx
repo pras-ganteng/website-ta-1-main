@@ -1,16 +1,14 @@
 'use client';
 
-import { useState, useRef, ChangeEvent, KeyboardEvent } from 'react';
+import { useState, useRef, KeyboardEvent } from 'react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import CustomDialog from '@/components/CustomDialog';
 
 export default function OtpPage() {
-  const router = useRouter();
   const [otp, setOtp] = useState(new Array(6).fill(''));
   const [resendLoading, setResendLoading] = useState(false);
-  const [dialog, setDialog] = useState<{open: boolean, title: string, message: string}>({open: false, title: '', message: ''});
+  const [dialog, setDialog] = useState<{ open: boolean, title: string, message: string }>({ open: false, title: '', message: '' });
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const handleChange = (element: HTMLInputElement, index: number) => {
@@ -126,21 +124,21 @@ export default function OtpPage() {
           <div className="text-center mt-8 text-sm">
             <p>
               Kirim ulang kode dalam waktu 1 menit{' '}
-                      <button
-                        className="align-middle inline-flex items-center gap-2"
-                        onClick={async () => {
-                          setResendLoading(true);
-                          // simulate resend call
-                          await new Promise((res) => setTimeout(res, 1200));
-                          setDialog({open: true, title: 'Berhasil', message: 'Kode telah dikirim ulang.'});
-                          setResendLoading(false);
-                        }}
-                        disabled={resendLoading}
-                      >
-                        {resendLoading ? <LoadingSpinner size={18} stroke="#000" /> : (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z"></path></svg>
-                        )}
-                      </button>
+              <button
+                className="align-middle inline-flex items-center gap-2"
+                onClick={async () => {
+                  setResendLoading(true);
+                  // simulate resend call
+                  await new Promise((res) => setTimeout(res, 1200));
+                  setDialog({ open: true, title: 'Berhasil', message: 'Kode telah dikirim ulang.' });
+                  setResendLoading(false);
+                }}
+                disabled={resendLoading}
+              >
+                {resendLoading ? <LoadingSpinner size={18} stroke="#000" /> : (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4z"></path></svg>
+                )}
+              </button>
             </p>
           </div>
         </div>
@@ -149,7 +147,7 @@ export default function OtpPage() {
         isOpen={dialog.open}
         title={dialog.title}
         message={dialog.message}
-        onClose={() => setDialog({open: false, title: '', message: ''})}
+        onClose={() => setDialog({ open: false, title: '', message: '' })}
       />
     </div>
   );

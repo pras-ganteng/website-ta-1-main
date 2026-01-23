@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://absensholat-api-mochraiyan9864-95nj69sm.leapcell.dev/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://absensholat-api.vercel.app/api";
 
 export async function POST(request: NextRequest) {
   try {

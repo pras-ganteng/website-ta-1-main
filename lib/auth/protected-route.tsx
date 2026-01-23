@@ -1,6 +1,7 @@
 import { useRouter } from 'next/navigation';
-import { useEffect, ReactNode } from 'react';
+import { useEffect, ReactNode, useState } from 'react';
 import { getSession } from './session';
+import React from 'react';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -10,8 +11,8 @@ interface ProtectedRouteProps {
  * Higher Order Component to protect routes that require authentication
  * Redirects to login page if user is not authenticated
  */
-export function withAuth(Component: React.ComponentType<any>) {
-  return function ProtectedComponent(props: any) {
+export function withAuth<T extends Record<string, unknown>>(Component: React.ComponentType<T>) {
+  return function ProtectedComponent(props: T) {
     const router = useRouter();
 
     useEffect(() => {
@@ -34,17 +35,19 @@ export function withAuth(Component: React.ComponentType<any>) {
  */
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const router = useRouter();
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const session = getSession();
-    if (!session) {
-      router.replace('/');
-    } else {
-      setIsAuthenticated(true);
-    }
-    setIsLoading(false);
+    Promise.resolve().then(() => {
+      const session = getSession();
+      if (!session) {
+        router.replace('/');
+      } else {
+        setIsAuthenticated(true);
+      }
+      setIsLoading(false);
+    });
   }, [router]);
 
   if (isLoading) {
@@ -60,3 +63,4 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   return isAuthenticated ? <>{children}</> : null;
 }
+

@@ -2,9 +2,11 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, X } from 'lucide-react';
-import { getSession, clearSession } from '@/lib/auth/session';
+import { ChevronDown } from 'lucide-react';
+import { getSession, clearSession, UserSession } from '@/lib/auth/session';
 import jsQR from 'jsqr';
+import Image from 'next/image';
+import Link from 'next/link';
 
 export default function ScanPage() {
   const router = useRouter();
@@ -13,22 +15,53 @@ export default function ScanPage() {
   const [scannedData, setScannedData] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserSession | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const session = getSession();
-    if (!session) {
-      router.replace('/');
-    } else {
-      setUser(session);
-    }
-    setIsLoading(false);
+    Promise.resolve().then(() => {
+      const session = getSession();
+      if (!session) {
+        router.replace('/');
+      } else {
+        setUser(session);
+      }
+      setIsLoading(false);
+    });
   }, [router]);
 
   useEffect(() => {
     if (!isScanning) return;
+
+    let animationFrameId: number;
+
+    const scan = () => {
+      if (!videoRef.current || !canvasRef.current) return;
+
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) return;
+
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+        if (code) {
+          setScannedData(code.data);
+          setIsScanning(false);
+          return;
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(scan);
+    };
 
     const startCamera = async () => {
       try {
@@ -40,12 +73,12 @@ export default function ScanPage() {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           videoRef.current.play();
-          
+
           setTimeout(() => {
-            scanQRCode();
+            scan();
           }, 500);
         }
-      } catch (err) {
+      } catch {
         setError('Tidak dapat mengakses kamera. Pastikan Anda telah memberikan izin.');
         setIsScanning(false);
       }
@@ -53,10 +86,14 @@ export default function ScanPage() {
 
     startCamera();
 
+    const currentVideo = videoRef.current;
     return () => {
-      if (videoRef.current?.srcObject) {
-        const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+      if (currentVideo?.srcObject) {
+        const tracks = (currentVideo.srcObject as MediaStream).getTracks();
         tracks.forEach((track) => track.stop());
+      }
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
       }
     };
   }, [isScanning]);
@@ -79,38 +116,7 @@ export default function ScanPage() {
 
   if (!user) return null;
 
-  const scanQRCode = () => {
-    if (!videoRef.current || !canvasRef.current) return;
 
-    const canvas = canvasRef.current;
-    const video = videoRef.current;
-    const ctx = canvas.getContext('2d');
-
-    if (!ctx) return;
-
-    const scan = () => {
-      if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, imageData.width, imageData.height);
-
-        if (code) {
-          setScannedData(code.data);
-          setIsScanning(false);
-          return;
-        }
-      }
-
-      if (isScanning) {
-        requestAnimationFrame(scan);
-      }
-    };
-
-    scan();
-  };
 
   const handleStopScan = () => {
     setIsScanning(false);
@@ -130,10 +136,10 @@ export default function ScanPage() {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <img src="/Images/smk.png" alt="Logo" className="h-10 mr-4" />
+              <Image src="/Images/smk.png" alt="Logo" width={40} height={40} className="h-10 mr-4" />
               <div>
                 <h1 className="text-lg font-bold text-white">PRESENSI SHOLAT DIGITAL</h1>
-                <p className="text-sm text-white">DHUHA, DHUHUR, JUM'AT</p>
+                <p className="text-sm text-white">DHUHA, DHUHUR, JUM&apos;AT</p>
               </div>
             </div>
             <div className="flex items-center">
@@ -148,8 +154,8 @@ export default function ScanPage() {
                 </button>
                 {dropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-xl z-10">
-                    <a href="/siswa/pengaturan" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profil</a>
-                    <button 
+                    <Link href="/siswa/pengaturan" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profil</Link>
+                    <button
                       onClick={handleLogout}
                       className="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium"
                     >

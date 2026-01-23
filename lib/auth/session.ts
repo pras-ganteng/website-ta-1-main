@@ -1,10 +1,19 @@
 // Session management utilities
 export interface UserSession {
-  nis: string;
-  nama: string;
+  nis?: string;
+  nama?: string;
+  nama_siswa?: string;
   email: string;
-  kelas: string;
-  [key: string]: any;
+  kelas?: string;
+  jk?: string;
+  jurusan?: string;
+  is_google_acct?: boolean;
+  role?: string;
+  token?: string;
+  id_staff?: number;
+  nip?: string;
+  name?: string;
+  username?: string;
 }
 
 const SESSION_KEY = 'user_session';
@@ -14,7 +23,7 @@ const SESSION_KEY = 'user_session';
  */
 export const getSession = (): UserSession | null => {
   if (typeof window === 'undefined') return null;
-  
+
   try {
     const session = localStorage.getItem(SESSION_KEY);
     return session ? JSON.parse(session) : null;
@@ -28,7 +37,7 @@ export const getSession = (): UserSession | null => {
  */
 export const setSession = (user: UserSession): void => {
   if (typeof window === 'undefined') return;
-  
+
   localStorage.setItem(SESSION_KEY, JSON.stringify(user));
 };
 
@@ -37,7 +46,7 @@ export const setSession = (user: UserSession): void => {
  */
 export const clearSession = (): void => {
   if (typeof window === 'undefined') return;
-  
+
   localStorage.removeItem(SESSION_KEY);
 };
 

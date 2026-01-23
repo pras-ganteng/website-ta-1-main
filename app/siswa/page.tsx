@@ -1,22 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ChevronDown, Bell, LogOut } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { getSession, clearSession } from '@/lib/auth/session';
+import { getSession, clearSession, UserSession } from '@/lib/auth/session';
+import Link from 'next/link';
+import Image from 'next/image';
 
 interface StatCardProps {
   title: string;
   value: string;
   color: string;
-  icon?: string;
 }
 
 interface PrayerTimeCardProps {
   prayer: string;
   time: string;
   status: string;
-  statusColor: string;
 }
 
 interface HistoryRowProps {
@@ -26,7 +26,7 @@ interface HistoryRowProps {
   status: string;
 }
 
-const StatCard = ({ title, value, color, icon }: StatCardProps) => (
+const StatCard = ({ title, value, color }: StatCardProps) => (
   <div className={`bg-white p-4 rounded-lg shadow-md flex items-center border-l-4 ${color}`}>
     <div>
       <p className="text-black text-sm">{title}</p>
@@ -35,7 +35,7 @@ const StatCard = ({ title, value, color, icon }: StatCardProps) => (
   </div>
 );
 
-const PrayerTimeCard = ({ prayer, time, status, statusColor }: PrayerTimeCardProps) => {
+const PrayerTimeCard = ({ prayer, time, status }: PrayerTimeCardProps) => {
   const getClasses = (status: string) => {
     switch (status) {
       case 'Selesai':
@@ -74,16 +74,18 @@ export default function SiswaPage() {
   const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserSession | null>(null);
 
   useEffect(() => {
-    const session = getSession();
-    if (!session) {
-      router.replace('/');
-    } else {
-      setUser(session);
-    }
-    setIsLoading(false);
+    Promise.resolve().then(() => {
+      const session = getSession();
+      if (!session) {
+        router.replace('/');
+      } else {
+        setUser(session);
+      }
+      setIsLoading(false);
+    });
   }, [router]);
 
   const handleLogout = () => {
@@ -117,7 +119,7 @@ export default function SiswaPage() {
     { prayer: 'Ashar', start: '15:00', end: '16:00' },
   ];
 
-  const prayers: Array<any> = [];
+  const prayers: Array<{ prayer: string; start: string; end: string; status: string; priority: number; displayTime: string; startDate: Date; endDate: Date; }> = [];
 
   basePrayers.forEach((p) => {
     if (p.prayer === 'Ashar' && isFriday) {
@@ -145,13 +147,13 @@ export default function SiswaPage() {
       const asharlaterPriority = asharlaterStatus === 'Akan Datang' ? 0 : asharlaterStatus === 'Berlangsung' ? 1 : 2;
       prayers.push({
         prayer: 'Ashar (Wanita)',
-        start: asharlaterStart.toTimeString().slice(0,5),
-        end: asharlaterEnd.toTimeString().slice(0,5),
+        start: asharlaterStart.toTimeString().slice(0, 5),
+        end: asharlaterEnd.toTimeString().slice(0, 5),
         startDate: asharlaterStart,
         endDate: asharlaterEnd,
         status: asharlaterStatus,
         priority: asharlaterPriority,
-        displayTime: `${asharlaterStart.getHours().toString().padStart(2,'0')}.${asharlaterStart.getMinutes().toString().padStart(2,'0')} - ${asharlaterEnd.getHours().toString().padStart(2,'0')}.${asharlaterEnd.getMinutes().toString().padStart(2,'0')} WIB`,
+        displayTime: `${asharlaterStart.getHours().toString().padStart(2, '0')}.${asharlaterStart.getMinutes().toString().padStart(2, '0')} - ${asharlaterEnd.getHours().toString().padStart(2, '0')}.${asharlaterEnd.getMinutes().toString().padStart(2, '0')} WIB`,
       });
     } else {
       const startDate = parseTimeToDate(p.start);
@@ -200,10 +202,10 @@ export default function SiswaPage() {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <img src="/Images/smk.png" alt="Logo" className="h-10 mr-4" />
+              <Image src="/Images/smk.png" alt="Logo" width={40} height={40} className="h-10 mr-4" />
               <div>
                 <h1 className="text-lg font-bold text-white">PRESENSI SHOLAT DIGITAL</h1>
-                <p className="text-sm text-white">DHUHA, DHUHUR, JUM'AT</p>
+                <p className="text-sm text-white">DHUHA, DHUHUR, JUM&apos;AT</p>
               </div>
             </div>
             <div className="flex items-center">
@@ -218,8 +220,8 @@ export default function SiswaPage() {
                 </button>
                 {dropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-xl z-10">
-                    <a href="/siswa/pengaturan" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profil</a>
-                    <button 
+                    <Link href="/siswa/pengaturan" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profil</Link>
+                    <button
                       onClick={handleLogout}
                       className="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium"
                     >
@@ -239,7 +241,7 @@ export default function SiswaPage() {
             <h2 className="font-bold text-xl">Waktu Sholat Dhuhur !</h2>
             <p>Segera lakukan absensi sebelum waktu berakhir</p>
           </div>
-          <button 
+          <button
             onClick={() => router.push('/siswa/scan')}
             className="bg-white text-red-500 font-bold py-2 px-6 rounded-lg shadow hover:shadow-lg hover:bg-red-500 hover:text-white transition-all duration-200 cursor-pointer"
           >
@@ -257,18 +259,14 @@ export default function SiswaPage() {
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h3 className="font-bold text-xl mb-4 text-black">Jadwal Sholat hari ini</h3>
             <div>
-              {sortedPrayers.map((p) => {
-                const statusColor = p.status === 'Selesai' ? 'border-l-green-500' : p.status === 'Berlangsung' ? 'border-l-orange-500' : 'border-l-blue-500';
-                return (
-                  <PrayerTimeCard
-                    key={p.prayer}
-                    prayer={p.prayer}
-                    time={p.displayTime}
-                    status={p.status}
-                    statusColor={statusColor}
-                  />
-                );
-              })}
+              {sortedPrayers.map((p) => (
+                <PrayerTimeCard
+                  key={p.prayer}
+                  prayer={p.prayer}
+                  time={p.displayTime}
+                  status={p.status}
+                />
+              ))}
             </div>
           </div>
 

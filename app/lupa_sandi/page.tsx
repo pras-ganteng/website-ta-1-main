@@ -3,37 +3,32 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { useRouter } from 'next/navigation';
 import CustomDialog from '@/components/CustomDialog';
 
 export default function ForgotPassword() {
-  const router = useRouter();
-
   const [nis, setNis] = useState('');
   const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [dialog, setDialog] = useState<{open: boolean, title: string, message: string}>({open: false, title: '', message: ''});
+  const [dialog, setDialog] = useState<{ open: boolean, title: string, message: string }>({ open: false, title: '', message: '' });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage('');
     setIsLoading(true);
 
     if (!nis.trim()) {
-      setDialog({open: true, title: 'Error', message: 'NIS/NIP wajib diisi'});
+      setDialog({ open: true, title: 'Error', message: 'NIS/NIP wajib diisi' });
       setIsLoading(false);
       return;
     }
 
     if (!email.trim()) {
-      setDialog({open: true, title: 'Error', message: 'Email wajib diisi'});
+      setDialog({ open: true, title: 'Error', message: 'Email wajib diisi' });
       setIsLoading(false);
       return;
     }
 
     setTimeout(() => {
-      setDialog({open: true, title: 'Berhasil', message: 'Link reset kata sandi telah dikirim ke email.'});
+      setDialog({ open: true, title: 'Berhasil', message: 'Link reset kata sandi telah dikirim ke email.' });
       setIsLoading(false);
     }, 1500);
   };
@@ -152,7 +147,7 @@ export default function ForgotPassword() {
         isOpen={dialog.open}
         title={dialog.title}
         message={dialog.message}
-        onClose={() => setDialog({open: false, title: '', message: ''})}
+        onClose={() => setDialog({ open: false, title: '', message: '' })}
       />
     </div>
   );
